@@ -21,27 +21,49 @@ type LoginResponse = {
   token: string;
 };
 
-type LoginError = {
-  ok: false;
+type LoginErrorPayload = {
   error: {
     code: string;
     message: string;
     details?: unknown;
   };
-  status: number;
+};
+
+type LoginErrorDetail = {
+  error: {
+    code: string;
+    message: string;
+    details?: unknown;
+  };
 };
 
 export const useLogin = () => {
   const router = useRouter();
   const { setAuth } = useAuthStore();
 
-  return useMutation<LoginResponse, LoginError, LoginRequest>({
+  return useMutation<LoginResponse, LoginErrorDetail, LoginRequest>({
     mutationFn: async (data) => {
-      const response = await apiClient.post<{ ok: true; data: LoginResponse; status: number }>(
-        "/api/auth/login",
-        data,
-      );
-      return response.data.data;
+      try {
+        const response = await apiClient.post<LoginResponse>(
+          "/api/auth/login",
+          data,
+        );
+        return response.data;
+      } catch (error: unknown) {
+        // axios 에러 처리
+        if (
+          error &&
+          typeof error === "object" &&
+          "response" in error &&
+          error.response &&
+          typeof error.response === "object" &&
+          "data" in error.response
+        ) {
+          const errorData = error.response.data as LoginErrorPayload;
+          throw errorData;
+        }
+        throw error;
+      }
     },
     onSuccess: (data) => {
       // 1. 인증 상태 저장

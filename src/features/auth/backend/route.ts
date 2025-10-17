@@ -19,7 +19,11 @@ import { signupUser, loginUser } from "./service";
 import { authErrorCodes } from "./error";
 
 export const registerAuthRoutes = (app: Hono<AppEnv>) => {
-  app.post("/auth/signup", async (c) => {
+  // 디버그용: 라우트 등록 확인
+  console.log('[Auth Routes] Registering /api/auth/signup and /api/auth/login');
+
+  app.post("/api/auth/signup", async (c) => {
+    console.log('[Auth Routes] POST /api/auth/signup called');
     const body = await c.req.json();
     const parsedBody = SignupRequestSchema.safeParse(body);
 
@@ -58,7 +62,7 @@ export const registerAuthRoutes = (app: Hono<AppEnv>) => {
   });
 
   // 로그인 엔드포인트 (추가)
-  app.post("/auth/login", async (c) => {
+  app.post("/api/auth/login", async (c) => {
     const body = await c.req.json();
     const parsedBody = LoginRequestSchema.safeParse(body);
 
