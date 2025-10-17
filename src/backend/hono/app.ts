@@ -4,6 +4,7 @@ import { withAppContext } from '@/backend/middleware/context';
 import { withSupabase } from '@/backend/middleware/supabase';
 import { registerExampleRoutes } from '@/features/example/backend/route';
 import { registerAuthRoutes } from '@/features/auth/backend/route';
+import { registerRoomRoutes } from '@/features/chatroom/backend/route';
 import type { AppEnv } from '@/backend/hono/context';
 
 // 전역 캐시 (개발 환경에서도 안정적)
@@ -36,6 +37,7 @@ export const createHonoApp = () => {
 
   registerExampleRoutes(app);
   registerAuthRoutes(app);
+  registerRoomRoutes(app);
 
   // 등록된 모든 라우트 출력
   console.log('[Hono] Registered routes:');
