@@ -16,6 +16,7 @@ export type AuthState = {
   isAuthenticated: boolean;
   setAuth: (user: User, token: string) => void;
   clearAuth: () => void;
+  updateUser: (updates: Partial<User>) => void;
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -37,6 +38,11 @@ export const useAuthStore = create<AuthState>()(
         if (typeof document !== "undefined") {
           document.cookie = "auth_token=; path=/; max-age=0";
         }
+      },
+      updateUser: (updates) => {
+        set((state) => ({
+          user: state.user ? { ...state.user, ...updates } : null,
+        }));
       },
     }),
     {

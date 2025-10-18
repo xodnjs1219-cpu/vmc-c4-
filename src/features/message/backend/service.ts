@@ -77,30 +77,36 @@ export const getMessages = async (
   }
 
   // 응답 데이터 변환
-  const transformedMessages: Message[] = (messages || []).map((msg: any) => ({
-    id: msg.id,
-    chatRoomId: msg.chat_room_id,
-    userId: msg.user_id,
-    authorNickname: msg.users?.nickname || '알 수 없음',
-    content: msg.content,
-    messageType: msg.message_type,
-    replyToMessageId: msg.reply_to_message_id,
-    replyToMessage: msg.reply_to && msg.reply_to.id
-      ? {
-          id: msg.reply_to.id,
-          content: msg.reply_to.content,
-          authorNickname: msg.reply_to.users?.nickname || '알 수 없음',
-          isDeleted: msg.reply_to.is_deleted,
-        }
-      : undefined,
-    likeCount: msg.message_likes?.length || 0,
-    isLikedByMe:
-      msg.message_likes?.some(
-        (like: any) => like.user_id === currentUserId
-      ) || false,
-    isDeleted: msg.is_deleted,
-    createdAt: msg.created_at,
-  }));
+  const transformedMessages: Message[] = (messages || []).map((msg: any) => {
+    // replyToMessage가 실제로 존재하는지 확인
+    // Supabase LEFT JOIN은 매칭되지 않으면 null 또는 빈 객체를 반환할 수 있음
+    const hasReplyTo = msg.reply_to_message_id && msg.reply_to && msg.reply_to.id;
+
+    return {
+      id: msg.id,
+      chatRoomId: msg.chat_room_id,
+      userId: msg.user_id,
+      authorNickname: msg.users?.nickname || '알 수 없음',
+      content: msg.content,
+      messageType: msg.message_type,
+      replyToMessageId: msg.reply_to_message_id,
+      replyToMessage: hasReplyTo
+        ? {
+            id: msg.reply_to.id,
+            content: msg.reply_to.content,
+            authorNickname: msg.reply_to.users?.nickname || '알 수 없음',
+            isDeleted: msg.reply_to.is_deleted,
+          }
+        : null,
+      likeCount: msg.message_likes?.length || 0,
+      isLikedByMe:
+        msg.message_likes?.some(
+          (like: any) => like.user_id === currentUserId
+        ) || false,
+      isDeleted: msg.is_deleted,
+      createdAt: msg.created_at,
+    };
+  });
 
   return success(transformedMessages, 200);
 };
