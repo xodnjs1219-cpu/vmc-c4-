@@ -2,9 +2,11 @@ import { Hono } from 'hono';
 import { errorBoundary } from '@/backend/middleware/error';
 import { withAppContext } from '@/backend/middleware/context';
 import { withSupabase } from '@/backend/middleware/supabase';
+import { withAuth } from '@/backend/middleware/auth';
 import { registerExampleRoutes } from '@/features/example/backend/route';
 import { registerAuthRoutes } from '@/features/auth/backend/route';
 import { registerRoomRoutes } from '@/features/chatroom/backend/route';
+import { registerMessageRoutes } from '@/features/message/backend/route';
 import type { AppEnv } from '@/backend/hono/context';
 
 // 전역 캐시 (개발 환경에서도 안정적)
@@ -31,6 +33,7 @@ export const createHonoApp = () => {
   app.use('*', errorBoundary());
   app.use('*', withAppContext());
   app.use('*', withSupabase());
+  app.use('*', withAuth());
 
   // 디버그용 라우트
   app.get('/api/health', (c) => c.json({ status: 'ok', message: 'Hono app is running' }));
@@ -38,6 +41,7 @@ export const createHonoApp = () => {
   registerExampleRoutes(app);
   registerAuthRoutes(app);
   registerRoomRoutes(app);
+  registerMessageRoutes(app);
 
   // 등록된 모든 라우트 출력
   console.log('[Hono] Registered routes:');

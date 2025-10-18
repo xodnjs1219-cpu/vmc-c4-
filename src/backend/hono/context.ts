@@ -10,10 +10,17 @@ export type AppConfig = {
   };
 };
 
+export type CurrentUser = {
+  id: string;
+  email: string;
+  nickname: string;
+};
+
 export type AppVariables = {
   supabase: SupabaseClient;
   logger: AppLogger;
   config: AppConfig;
+  currentUser?: CurrentUser;
 };
 
 export type AppEnv = {
@@ -26,7 +33,8 @@ export const contextKeys = {
   supabase: 'supabase',
   logger: 'logger',
   config: 'config',
-} as const satisfies Record<keyof AppVariables, keyof AppVariables>;
+  currentUser: 'currentUser',
+} as const;
 
 export const getSupabase = (c: AppContext) =>
   c.get(contextKeys.supabase) as SupabaseClient;
@@ -36,3 +44,6 @@ export const getLogger = (c: AppContext) =>
 
 export const getConfig = (c: AppContext) =>
   c.get(contextKeys.config) as AppConfig;
+
+export const getCurrentUser = (c: AppContext) =>
+  c.get(contextKeys.currentUser) as CurrentUser | undefined;

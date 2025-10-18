@@ -15,7 +15,7 @@ export function RoomItem({ room }: RoomItemProps) {
   const router = useRouter();
 
   const handleClick = () => {
-    router.push(`/room/${room.id}`);
+    router.push(`/app/room/${room.id}`);
   };
 
   const timeAgo = formatDistanceToNow(new Date(room.createdAt), {
