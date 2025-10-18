@@ -11,16 +11,12 @@ export type Room = {
   createdAt: string;
 };
 
-type RoomsResponse = {
-  data: Room[];
-};
-
 export const useRooms = () => {
   return useQuery<Room[], Error>({
     queryKey: ["rooms"],
     queryFn: async () => {
-      const response = await apiClient.get<RoomsResponse>("/api/rooms");
-      return response.data.data;
+      const response = await apiClient.get<Room[]>("/api/rooms");
+      return response.data;
     },
     staleTime: 30 * 1000, // 30초
     refetchOnWindowFocus: true,

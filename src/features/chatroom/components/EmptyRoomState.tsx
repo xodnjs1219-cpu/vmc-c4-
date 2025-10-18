@@ -8,7 +8,7 @@ export function EmptyRoomState() {
   const router = useRouter();
 
   const handleCreateRoom = () => {
-    router.push("/create-chatroom");
+    router.push("/app/create-room");
   };
 
   return (

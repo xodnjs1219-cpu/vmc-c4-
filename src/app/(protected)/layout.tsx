@@ -2,7 +2,7 @@
 
 import { useEffect, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
+import { useAuthStore } from "@/features/auth/store/auth-store";
 import { LOGIN_PATH } from "@/constants/auth";
 
 const buildRedirectUrl = (pathname: string) => {
@@ -16,15 +16,15 @@ type ProtectedLayoutProps = {
 };
 
 export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
-  const { isAuthenticated, isLoading } = useCurrentUser();
+  const { isAuthenticated } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isAuthenticated) {
       router.replace(buildRedirectUrl(pathname));
     }
-  }, [isAuthenticated, isLoading, pathname, router]);
+  }, [isAuthenticated, pathname, router]);
 
   if (!isAuthenticated) {
     return null;

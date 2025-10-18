@@ -13,7 +13,7 @@ export function HomeLayout() {
   const { toast } = useToast();
 
   const handleCreateRoom = () => {
-    router.push("/create-chatroom");
+    router.push("/app/create-room");
   };
 
   const handleMyPage = () => {
