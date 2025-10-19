@@ -18,7 +18,7 @@ export default function ChatRoomPage({
 
   return (
     <ChatRoomProvider roomId={roomId}>
-      <div className="flex min-h-screen flex-col">
+      <div className="flex min-h-screen flex-col bg-slate-100">
         <ChatRoomHeader />
         <ConnectionStatusBanner />
         <MessageTimeline />

@@ -24,14 +24,14 @@ export const MessageTimeline: React.FC = () => {
     <div
       ref={timelineRef}
       onScroll={handleScroll}
-      className="flex-1 overflow-y-auto px-4 py-4"
+      className="flex-1 overflow-y-auto bg-slate-100 py-3"
     >
       {mergedMessages.length === 0 ? (
         <div className="flex h-full items-center justify-center">
           <p className="text-sm text-gray-500">아직 메시지가 없습니다</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {mergedMessages.map((message, index) => (
             <MessageItem
               key={message.id || `temp-${index}`}
