@@ -67,3 +67,54 @@ export type LoginServiceError =
   | "LOGIN_FETCH_ERROR"
   | "PASSWORD_COMPARE_ERROR"
   | "TOKEN_GENERATION_ERROR";
+
+// 비밀번호 재설정 요청 스키마
+export const ForgotPasswordRequestSchema = z.object({
+  email: z
+    .string()
+    .min(1, { message: "이메일은 필수입니다" })
+    .email({ message: "올바른 이메일 형식이 아닙니다" }),
+});
+
+export type ForgotPasswordRequest = z.infer<typeof ForgotPasswordRequestSchema>;
+
+export const ForgotPasswordResponseSchema = z.object({
+  message: z.string(),
+});
+
+export type ForgotPasswordResponse = z.infer<typeof ForgotPasswordResponseSchema>;
+
+// 비밀번호 재설정 스키마
+export const ResetPasswordRequestSchema = z
+  .object({
+    token: z.string().min(1, { message: "토큰은 필수입니다" }),
+    password: z
+      .string()
+      .min(8, { message: "비밀번호는 8자 이상이어야 합니다" }),
+    passwordConfirm: z
+      .string()
+      .min(1, { message: "비밀번호 확인은 필수입니다" }),
+  })
+  .refine((data) => data.password === data.passwordConfirm, {
+    message: "비밀번호가 일치하지 않습니다",
+    path: ["passwordConfirm"],
+  });
+
+export type ResetPasswordRequest = z.infer<typeof ResetPasswordRequestSchema>;
+
+export const ResetPasswordResponseSchema = z.object({
+  message: z.string(),
+});
+
+export type ResetPasswordResponse = z.infer<typeof ResetPasswordResponseSchema>;
+
+// 비밀번호 재설정 서비스 에러 타입
+export type PasswordResetServiceError =
+  | "USER_NOT_FOUND"
+  | "EMAIL_SEND_ERROR"
+  | "INVALID_TOKEN"
+  | "EXPIRED_TOKEN"
+  | "PASSWORD_HASH_ERROR"
+  | "PASSWORD_UPDATE_ERROR"
+  | "LOGIN_FETCH_ERROR"
+  | "TOKEN_GENERATION_ERROR";

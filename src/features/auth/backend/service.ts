@@ -12,9 +12,15 @@ import type {
   LoginRequest,
   LoginResponse,
   LoginServiceError,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
+  PasswordResetServiceError,
+  ResetPasswordRequest,
+  ResetPasswordResponse,
 } from "./schema";
 import { authErrorCodes } from "./error";
-import { generateToken } from "./jwt";
+import { generateToken, generateResetToken, verifyResetToken } from "./jwt";
+import { sendPasswordResetEmail } from "./email";
 
 const USERS_TABLE = "users";
 const BCRYPT_ROUNDS = 10;
@@ -182,6 +188,152 @@ export const loginUser = async (
         createdAt: user.created_at,
       },
       token,
+    },
+    200,
+  );
+};
+
+// 비밀번호 재설정 요청 (1단계: 이메일 전송)
+export const requestPasswordReset = async (
+  client: SupabaseClient,
+  data: ForgotPasswordRequest,
+): Promise<
+  HandlerResult<ForgotPasswordResponse, PasswordResetServiceError, unknown>
+> => {
+  // 1. 이메일로 사용자 조회
+  const { data: user, error: fetchError } = await client
+    .from(USERS_TABLE)
+    .select("id, email")
+    .eq("email", data.email)
+    .maybeSingle();
+
+  if (fetchError) {
+    return failure(
+      500,
+      authErrorCodes.loginFetchError as PasswordResetServiceError,
+      fetchError.message,
+    );
+  }
+
+  // 2. 사용자가 없어도 보안상 동일한 응답 반환
+  // (이메일 존재 여부를 노출하지 않음)
+  if (!user) {
+    return success(
+      {
+        message:
+          "이메일로 비밀번호 재설정 링크를 전송했습니다. 이메일을 확인해주세요.",
+      },
+      200,
+    );
+  }
+
+  // 3. 재설정 토큰 생성
+  let resetToken: string;
+  try {
+    resetToken = await generateResetToken(user.id, user.email);
+  } catch {
+    return failure(
+      500,
+      authErrorCodes.tokenGenerationError as PasswordResetServiceError,
+      "토큰 생성 중 오류가 발생했습니다",
+    );
+  }
+
+  // 4. 이메일 전송
+  const emailResult = await sendPasswordResetEmail({
+    to: user.email,
+    resetToken,
+  });
+
+  if (!emailResult.success) {
+    return failure(
+      500,
+      authErrorCodes.emailSendError as PasswordResetServiceError,
+      emailResult.error || "이메일 전송 중 오류가 발생했습니다",
+    );
+  }
+
+  // 5. 성공 응답
+  return success(
+    {
+      message:
+        "이메일로 비밀번호 재설정 링크를 전송했습니다. 이메일을 확인해주세요.",
+    },
+    200,
+  );
+};
+
+// 비밀번호 재설정 실행 (2단계: 새 비밀번호 설정)
+export const resetPassword = async (
+  client: SupabaseClient,
+  data: ResetPasswordRequest,
+): Promise<
+  HandlerResult<ResetPasswordResponse, PasswordResetServiceError, unknown>
+> => {
+  // 1. 토큰 검증
+  const payload = await verifyResetToken(data.token);
+
+  if (!payload) {
+    return failure(
+      401,
+      authErrorCodes.invalidToken as PasswordResetServiceError,
+      "유효하지 않거나 만료된 토큰입니다",
+    );
+  }
+
+  // 2. 사용자 조회 (토큰의 userId로)
+  const { data: user, error: fetchError } = await client
+    .from(USERS_TABLE)
+    .select("id, email")
+    .eq("id", payload.userId)
+    .maybeSingle();
+
+  if (fetchError) {
+    return failure(
+      500,
+      authErrorCodes.loginFetchError as PasswordResetServiceError,
+      fetchError.message,
+    );
+  }
+
+  if (!user) {
+    return failure(
+      404,
+      authErrorCodes.userNotFound as PasswordResetServiceError,
+      "사용자를 찾을 수 없습니다",
+    );
+  }
+
+  // 3. 비밀번호 해싱
+  let passwordHash: string;
+  try {
+    passwordHash = await hash(data.password, BCRYPT_ROUNDS);
+  } catch {
+    return failure(
+      500,
+      authErrorCodes.passwordHashError as PasswordResetServiceError,
+      "비밀번호 암호화 중 오류가 발생했습니다",
+    );
+  }
+
+  // 4. 비밀번호 업데이트
+  const { error: updateError } = await client
+    .from(USERS_TABLE)
+    .update({ password_hash: passwordHash })
+    .eq("id", user.id);
+
+  if (updateError) {
+    return failure(
+      500,
+      authErrorCodes.passwordUpdateError as PasswordResetServiceError,
+      updateError.message,
+    );
+  }
+
+  // 5. 성공 응답
+  return success(
+    {
+      message: "비밀번호가 성공적으로 변경되었습니다",
     },
     200,
   );

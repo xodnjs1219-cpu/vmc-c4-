@@ -3,11 +3,18 @@ import { SignJWT, jwtVerify } from "jose";
 const JWT_SECRET =
   process.env.JWT_SECRET || "your-secret-key-change-in-production";
 const JWT_EXPIRES_IN = "7d"; // 7일
+const RESET_TOKEN_EXPIRES_IN = "1h"; // 1시간
 
 export type JWTPayload = {
   userId: string;
   email: string;
   nickname: string;
+};
+
+export type ResetTokenPayload = {
+  userId: string;
+  email: string;
+  type: "password-reset";
 };
 
 export const generateToken = async (
@@ -32,6 +39,43 @@ export const verifyToken = async (
     const { payload } = await jwtVerify(token, secret);
 
     return payload as unknown as JWTPayload;
+  } catch {
+    return null;
+  }
+};
+
+export const generateResetToken = async (
+  userId: string,
+  email: string,
+): Promise<string> => {
+  const secret = new TextEncoder().encode(JWT_SECRET);
+
+  const token = await new SignJWT({
+    userId,
+    email,
+    type: "password-reset",
+  })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime(RESET_TOKEN_EXPIRES_IN)
+    .sign(secret);
+
+  return token;
+};
+
+export const verifyResetToken = async (
+  token: string,
+): Promise<ResetTokenPayload | null> => {
+  try {
+    const secret = new TextEncoder().encode(JWT_SECRET);
+    const { payload } = await jwtVerify(token, secret);
+
+    // 타입 확인
+    if (payload.type !== "password-reset") {
+      return null;
+    }
+
+    return payload as unknown as ResetTokenPayload;
   } catch {
     return null;
   }
